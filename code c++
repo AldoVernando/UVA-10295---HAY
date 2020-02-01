@@ -1,0 +1,177 @@
+#include<stdio.h>
+#include<iostream>
+#include<string.h>
+#include<string>
+#include<vector>
+#include<sstream>
+#include<stdlib.h>
+
+using namespace std;
+
+int value = 0;
+
+struct node {
+	char id[1000];
+	int val;
+	int height;
+	
+	struct node *left;
+	struct node *right;
+};
+
+
+int max(int a, int b) {
+	return (a < b) ? b : a;
+}
+
+int getHeight(struct node *localRoot) {
+	if (localRoot == NULL) return 0;
+	return localRoot->height;
+}
+
+int getBalFactor(struct node *localRoot) {
+	if (localRoot == NULL) return 0;
+	return getHeight(localRoot->left) -
+				getHeight(localRoot->right);
+}
+
+struct node *newNode(char* id, int val) {
+	struct node *nNode = (struct node *)malloc(
+							sizeof(struct node)
+								);
+	strcpy(nNode->id,id);
+	nNode->val = val;
+	nNode->left = NULL;
+	nNode->right = NULL;
+	nNode->height = 1;
+	
+	return nNode;
+}
+
+struct node *leftRotate(struct node *x) {
+	
+	struct node *y = x->right;
+	struct node *B = y->left;
+	
+	y->left = x;
+	x->right = B;
+	
+	x->height = max(getHeight(x->left),
+					getHeight(x->right)) + 1;
+	y->height = max(getHeight(y->left),
+					getHeight(y->right)) + 1;
+	return y;
+}
+
+struct node *rightRotate(struct node *y) {
+	struct node *x = y->left;
+	struct node *B = x->right;
+	
+	x->right = y;
+	y->left = B;
+
+	y->height = max(getHeight(y->left),
+					getHeight(y->right)) + 1;
+	x->height = max(getHeight(x->left),
+					getHeight(x->right)) + 1;
+	return x;
+}
+
+
+struct node *reBalance(struct node *localRoot) {
+	
+	localRoot->height = max(getHeight(localRoot->left),
+						getHeight(localRoot->right)) + 1;
+	int bfact = getBalFactor(localRoot);
+	
+	if (bfact > 1 && getBalFactor(localRoot->left) < 0) {
+		localRoot->left = leftRotate(localRoot->left);
+		return rightRotate(localRoot);
+	}
+	if (bfact > 1 && getBalFactor(localRoot->left) >= 0) {
+		return rightRotate(localRoot);
+	}
+	if (bfact < -1 && getBalFactor(localRoot->right) <= 0) {
+		return leftRotate(localRoot);
+	}
+	if (bfact < -1 && getBalFactor(localRoot->right) > 0) {
+		localRoot->right = rightRotate(localRoot->right);
+		return leftRotate(localRoot);
+	}
+	return localRoot;
+}
+
+struct node *insertVal(struct node *localRoot, char* id, int val) {
+	if (localRoot == NULL) return newNode(id,val);
+	if (strcmp(localRoot->id,id) < 0) {
+		localRoot->right = insertVal(localRoot->right, id, val);
+	} else if (strcmp(localRoot->id,id) > 0) {
+		localRoot->left = insertVal(localRoot->left, id, val);
+	} else {
+		return localRoot;
+	}
+	return reBalance(localRoot);
+}
+
+int findNode(struct node *localRoot,char* id) {
+	if (localRoot == NULL) return 0;
+	if (strcmp(localRoot->id,id) < 0) {
+		return findNode(localRoot->right, id);
+	} else if (strcmp(localRoot->id,id) > 0) {
+		return findNode(localRoot->left, id);
+	} else if(strcmp(localRoot->id,id)==0){
+		return localRoot->val;
+	}
+	else{
+		return 0;
+	}
+}
+
+int main(){
+	
+	struct node *root = NULL;
+	vector<string> split;
+	char desc[10000];
+	
+	int dict,test;
+	char word[1000][1000];
+	int val[100000];
+	
+	scanf("%d %d",&dict,&test);
+	
+	for(int i=0;i<dict;i++){
+		scanf("%s %d",word[i],&val[i]);
+		root = insertVal(root,word[i],val[i]);
+	}
+	
+	int count = 0;
+	
+	while(gets(desc)){
+		
+		split.clear();
+		
+		if(strcmp(desc,".") == 0){
+			printf("%d\n",count);
+			count = 0;
+		}
+		string oneWord;
+		char del = ' ';
+		stringstream ss(desc);
+						
+		while(getline(ss,oneWord,' ')){
+			split.push_back(oneWord);
+		}
+			
+		for(int i=0;i<split.size();i++){
+			string s = split.at(i);
+
+			char kata[1000]; 
+			
+			strcpy(kata,s.c_str());
+
+			count += findNode(root,kata);
+		}			
+	}
+
+	return 0;
+}
